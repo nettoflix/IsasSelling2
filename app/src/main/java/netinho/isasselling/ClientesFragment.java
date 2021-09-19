@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
@@ -37,6 +38,7 @@ public class ClientesFragment extends Fragment {
     LinearLayout verticalClients;
     Button dlgbtn_addClient;
     Button btn_AddClient;
+    Spinner spn_dividaSpinner;
     TextView tv_DividaGeral;
     double DividaGeral;
     TextView tv_SaldoGeral;
@@ -63,6 +65,9 @@ public class ClientesFragment extends Fragment {
         //Array de clientes
         clientes = new ArrayList<Cliente>();
         //
+        spn_dividaSpinner = fragmentView.findViewById(R.id.fragmentclientes_dividaSpinner);
+        String[] testMonths = {"Mês"};
+        Handler.setSpinnerAdapter_stringArray(activity, testMonths, spn_dividaSpinner);
         tv_DividaGeral = fragmentView.findViewById(R.id.fragmentclientes_DividaGeral);
         tv_SaldoGeral = fragmentView.findViewById(R.id.fragmentclientes_SaldoGeral);
         LinearLayout paiDosGerais = (LinearLayout) tv_SaldoGeral.getParent();

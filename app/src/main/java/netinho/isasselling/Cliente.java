@@ -144,6 +144,7 @@ public void pagarDivida(double valor)
         }
 
         dialogClienteDetails.updateDividaTotal(newValue);
+        dialogClienteDetails.parcelasDialog.pagarParcela(valor);
 
     }
 }

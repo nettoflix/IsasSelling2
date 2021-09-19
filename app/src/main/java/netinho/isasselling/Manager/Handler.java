@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
+import java.text.DateFormatSymbols;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,4 +77,9 @@ public class Handler {
                 listStrings);
         spn.setAdapter(spnAdapterMarcas);
     }
+    public final static String[] meses  = {"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"};
+     public static String getMonth(int month) {
+        return meses[month];
+    }
+
 }

@@ -30,12 +30,14 @@ public class DialogClienteDetails extends Dialog {
     Button btn_addCompra;
     Button btn_resetar;
     Button btn_addPagamento;
+    Button btn_parcelas;
 
     LinearLayout listHolder;
     TextView tv_dividaTotal;
     TextView tv_saldo;
     double vDividaTotal=0;
     //
+    DialogParcelas parcelasDialog;
     ComprasDialog comprasDialog;
     HashMap<String, CustomView> hashCategories;
     public DialogClienteDetails(@NonNull MainActivity ctx, Cliente cliente , LinearLayout father, String nome) {
@@ -63,6 +65,9 @@ public class DialogClienteDetails extends Dialog {
         btn_resetar = (Button) dialog_client.findViewById(R.id.btn_resetar);
         btn_resetar.setTag("reset");
         btn_resetar.setOnClickListener(btnListener);
+        btn_parcelas = (Button) dialog_client.findViewById(R.id.btn_parcelas);
+        btn_parcelas.setTag("parcelas");
+        btn_parcelas.setOnClickListener(btnListener);
         btn_addCompra = (Button) dialog_client.findViewById(R.id.btn_addCompra);
         btn_addCompra.setOnClickListener( new Listener_btn_addCompra(cliente));
         btn_addPagamento = (Button) dialog_client.findViewById(R.id.btn_addPagamento);
@@ -166,6 +171,7 @@ public class DialogClienteDetails extends Dialog {
             tv_dividaTotal.setText(formatedDivida);
         }
        // cliente.clientDebt.setText(formatedDivida);
+       if(parcelasDialog !=null) parcelasDialog.updateDividaTotal(value);
         cliente.updateDividaTotal(value);
     }
     class Button_Listener implements View.OnClickListener
@@ -192,6 +198,11 @@ public class DialogClienteDetails extends Dialog {
                 // A null listener allows the button to dismiss the dialog and take no further action.
                 alertDialog.setNegativeButton(android.R.string.no, null);
                 alertDialog.show();
+            }
+            else if(view.getTag().equals("parcelas"))
+            {
+                if(parcelasDialog ==null) parcelasDialog = new DialogParcelas(ctx,cliente,vDividaTotal);
+                parcelasDialog.show();
             }
 
 

@@ -31,7 +31,7 @@ public class ComprasDialog extends Dialog {
         super(ctx);
         this.ctx = ctx;
         this.cliente = cliente;
-        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(400, 400);
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(400, 600);
         LinearLayout dialog_addcompra = (LinearLayout) getLayoutInflater().inflate(R.layout.dialog__addcompra,null , false);
         this.setContentView(dialog_addcompra,layoutParams);
         m_name = dialog_addcompra.findViewById(R.id.addcompra_productName);
