@@ -37,7 +37,7 @@ public class DialogClienteDetails extends Dialog {
     TextView tv_saldo;
     double vDividaTotal=0;
     //
-    DialogParcelas parcelasDialog;
+    boolean parcelasDialogIsOn=false;
     ComprasDialog comprasDialog;
     HashMap<String, CustomView> hashCategories;
     public DialogClienteDetails(@NonNull MainActivity ctx, Cliente cliente , LinearLayout father, String nome) {
@@ -77,6 +77,7 @@ public class DialogClienteDetails extends Dialog {
         //remember its "saldo" that was already loaded
         tv_saldo.setText(Handler.formartDoubleToString(cliente.saldo, "R$"));
 
+        if(cliente.parcelasDialog ==null) cliente.parcelasDialog = new DialogParcelas(ctx,cliente);
 
     }
 
@@ -107,16 +108,26 @@ public class DialogClienteDetails extends Dialog {
         //there is already at least one products of this category
         else {
             categoryList = hashCategories.get(key);
-            //it is the first time this product has been bought, so add the view and everything
-            if(!categoryList.adapterProductsHash.containsKey(product.name))
+
+            if(categoryList.adapterProductsHash.containsKey(product.name))
             {
-                categoryList.addSingleView(product);
+                if(categoryList.adapterProductsHash.get(product.name).price == product.price) //besides havin the same name, they have the same price, so indeed they are the same product
+                {
+                    // this product has already been bought, so just increase the quantity value
+                    categoryList.adapterProductsHash.get(product.name).incrementQuantity(product.quantity);
+                }
+                else
+                {
+                    { //it is the first time this product has been bought, so add the view and everything
+                        categoryList.addSingleView(product);
+
+                    }
+                }
 
             }
-            // this product has already been bought, so just increase the quantity value
             else
-            {
-                categoryList.adapterProductsHash.get(product.name).incrementQuantity(product.quantity);
+            { //it is the first time this product has been bought, so add the view and everything
+                categoryList.addSingleView(product);
 
             }
             //replace the product to update the quantity
@@ -134,7 +145,7 @@ public class DialogClienteDetails extends Dialog {
         }
 
         updateDividaTotal(getTotalPrice_fromCategories() - cliente.pagoAcumulado);
-        ctx.FragmentAdapter.clients.updateDividaGeral();
+
 
 
     }
@@ -147,11 +158,14 @@ public class DialogClienteDetails extends Dialog {
     }
     public void resetar() {
         removeBoughtProducts();
-        ctx.FragmentAdapter.clients.decrementDividaGeral(vDividaTotal);
         ctx.FragmentAdapter.clients.decrementSaldoGeral(cliente.saldo);
         cliente.saldo = 0;
         tv_saldo.setText(Handler.formartDoubleToString(cliente.saldo, "R$"));
+        cliente.parcelasDialog.removeAllParcelas();;
         updateDividaTotal(0.0);
+        ctx.FragmentAdapter.clients.updateDivida();
+
+
     }
     private double getTotalPrice_fromCategories()
     {
@@ -171,7 +185,7 @@ public class DialogClienteDetails extends Dialog {
             tv_dividaTotal.setText(formatedDivida);
         }
        // cliente.clientDebt.setText(formatedDivida);
-       if(parcelasDialog !=null) parcelasDialog.updateDividaTotal(value);
+       if(cliente.parcelasDialog !=null) cliente.parcelasDialog.updateDividaTotal(value);
         cliente.updateDividaTotal(value);
     }
     class Button_Listener implements View.OnClickListener
@@ -201,8 +215,8 @@ public class DialogClienteDetails extends Dialog {
             }
             else if(view.getTag().equals("parcelas"))
             {
-                if(parcelasDialog ==null) parcelasDialog = new DialogParcelas(ctx,cliente,vDividaTotal);
-                parcelasDialog.show();
+                if(!cliente.parcelasDialog.dialogIsOn) cliente.parcelasDialog.init();
+                cliente.parcelasDialog.show();
             }
 
 

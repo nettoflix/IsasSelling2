@@ -20,41 +20,54 @@ public class DialogParcelas extends Dialog {
 
 
 
-
     public enum Type{personalized, padrao};
     MainActivity ctx;
     Cliente cliente;
     double dividaTotal;
     LinearLayout parcelas_vertical;
     Button add_parcela;
+    Button deletarAllParcelas;
     ArrayList<Parcela>parcelas;
-    public DialogParcelas(@NonNull MainActivity ctx, Cliente cliente, double dividaTotal) {
+    boolean dialogIsOn = false;
+    public DialogParcelas(@NonNull MainActivity ctx, Cliente cliente) {
         super(ctx);
         this.ctx = ctx;
         this.cliente =cliente;
-        this.dividaTotal = dividaTotal;
         parcelas = new ArrayList<>();
+        cliente.parcelasReference = parcelas;
+
+        if(cliente.getSavedParcelas().size()>0)
+        {
+            loadParcelas(cliente.getSavedParcelas());
+        }
+    }
+    public void init() {
         ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.width = DesignByCode.getScreenDimensions(ctx).x -  DesignByCode.getScreenDimensions(ctx).x/4;
         params.height = DesignByCode.getScreenDimensions(ctx).y - DesignByCode.getScreenDimensions(ctx).y/3;
         LinearLayout father = (LinearLayout) getLayoutInflater().inflate(R.layout.dialog_parcelas, null);
-        parcelas_vertical = father.findViewById(R.id.parcelas_vertical);
-        add_parcela = father.findViewById(R.id.add_parcela);
-        add_parcela.setTag("add_parcela");
-        add_parcela.setOnClickListener(new Button_Listener());
+            parcelas_vertical = father.findViewById(R.id.parcelas_vertical);
+            Button_Listener listener = new Button_Listener();
+            add_parcela = father.findViewById(R.id.add_parcela);
+            add_parcela.setTag("add_parcela");
+            add_parcela.setOnClickListener(listener);
+            deletarAllParcelas = father.findViewById(R.id.deletarAllParcelas);
+            deletarAllParcelas .setTag("deletarAllParcelas");
+            deletarAllParcelas .setOnClickListener(listener);
+        dialogIsOn = true;
+        for(Parcela p : parcelas)
+        {
+            addParcelaOnLayout(p);
+        }
         this.setContentView(father,params);
-      //  if(cliente.getSavedParcelas().size()>0)
-       // {
-         //   loadParcelas(cliente.getSavedParcelas());
-       // }
     }
-    public void addParcela(Parcela parcela)
+
+    public void addParcelaOnLayout(Parcela parcela)
     {
        // if(t == Type.padrao)
         //{
                 parcela.setOnClickListener(new ClickListener());
                 parcela.setOnLongClickListener(new LongClickListener());
-                parcelas.add(parcela);
                 parcelas_vertical.addView(parcela);
 
         //}
@@ -65,19 +78,32 @@ public class DialogParcelas extends Dialog {
 
         @Override
         public void onClick(View v) {
-            double dividaDisponivel = dividaTotal - getParcelasValues();
-            if (dividaDisponivel > 0) {
+
+
                 if (v.getTag().equals("add_parcela")) {
+                    double dividaDisponivel = dividaTotal - getParcelasValues();
+                    if (dividaDisponivel > 0) {
                     DialogCriarParcela dialog = new DialogCriarParcela(ctx, DialogParcelas.this, cliente, dividaDisponivel);
                     dialog.show();
                 }
-            }
+                }
+                if(v.getTag().equals("deletarAllParcelas"))
+                {
+                    AlertDialog.Builder alertDialog = Handler.setAlertDialog(ctx, "Deletar Todas as parcelas", "Você tem certeza que deseja deletar todas as parcelas ao invés de pagá-las?");
+                    alertDialog.setNegativeButton(android.R.string.no, null);
+                    alertDialog.setPositiveButton(android.R.string.yes, new OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            removeAllParcelas();
+                        }
+                    });
+                    alertDialog.show();
+                }
         }
     }
     public void loadParcelas(ArrayList<Parcela> savedParcelas) {
         for(int i=0; i<savedParcelas.size(); i++)
         {
-            addParcela(savedParcelas.get(i));
+            parcelas.add(savedParcelas.get(i));
         }
     }
 
@@ -94,20 +120,17 @@ public class DialogParcelas extends Dialog {
         @Override
         public void onClick(View v) {
             final Parcela parcela = (Parcela) v;
-           AlertDialog.Builder alertDialog = Handler.setAlertDialog(ctx, "Pagar Parcela", "Você tem certeza que deseja pagar " + parcela.getSelectedQuantity() + " parcela?");
+           AlertDialog.Builder alertDialog = Handler.setAlertDialog(ctx, "Pagar Parcela", "Você tem certeza que deseja pagar essa parcela?");
             // A null listener allows the button to dismiss the dialog and take no further action.
             alertDialog.setNegativeButton(android.R.string.no, null);
            alertDialog.setPositiveButton(android.R.string.yes, new OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
-                    int quantidade_de_parcelas = Integer.parseInt(parcela.getSelectedQuantity());
-                   cliente.pagarDivida(quantidade_de_parcelas * parcela.valorDaParcela);
-                   if(parcela.quantidade - quantidade_de_parcelas > 0) {
-                       parcela.decreaseParcela(quantidade_de_parcelas);
-                   } else
-                   {
-                       removeParcela(parcela);
+                        double newValue = cliente.divida - parcela.valorDaParcela;
+                        removeParcela(parcela);
+                        cliente.dialogClienteDetails.updateDividaTotal(newValue);
+                        ctx.FragmentAdapter.clients.updateDivida();
+                        cliente.checarDividaAndRemoveProducts(newValue);
 
-                   }
                 }
             });
             alertDialog.show();
@@ -165,13 +188,17 @@ public class DialogParcelas extends Dialog {
     }
     public void removeParcela(Parcela parcela)
     {
-        parcelas.remove(parcela);
         parcelas_vertical.removeView(parcela);
+        parcelas.remove(parcela);
+
     }
     public void removeAllParcelas()
     {
-        for (int i = 0; i <parcelas.size(); i++) {
-            removeParcela(parcelas.get(i));
+        Iterator<Parcela> itr = parcelas.iterator();
+        while (itr.hasNext()) {
+            Parcela parc = itr.next();
+                itr.remove();
+                parcelas_vertical.removeView(parc);
         }
 
     }

@@ -7,10 +7,13 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -26,8 +29,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 import netinho.isasselling.Manager.DesignByCode;
 import netinho.isasselling.Manager.Handler;
@@ -46,7 +54,7 @@ public class ClientesFragment extends Fragment {
     Dialog dlg_AddClient;
     MainActivity activity;
     ArrayList<Cliente> clientes;
-
+    EditText filtroText;
     //Button btn_save;
    // Button btn_load;
     @SuppressLint("ResourceType") LinearLayout dialogFatherLayout;
@@ -66,21 +74,43 @@ public class ClientesFragment extends Fragment {
         clientes = new ArrayList<Cliente>();
         //
         spn_dividaSpinner = fragmentView.findViewById(R.id.fragmentclientes_dividaSpinner);
-        String[] testMonths = {"Mês"};
-        Handler.setSpinnerAdapter_stringArray(activity, testMonths, spn_dividaSpinner);
+        initMonthsSpinner();
+        //Filtro do nome dos clientes
+        filtroText = fragmentView.findViewById(R.id.fragmentclientes_filtro);
+        filtroText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+               // Log.d("Before: ", s.toString());
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+               // Log.d("On: ", s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                //Log.d("After: ", s.toString());
+                String digitado = s.toString().toUpperCase(); //transforma em maisculo;
+                filtrarClientes(digitado);
+            }
+
+
+        });
+
         tv_DividaGeral = fragmentView.findViewById(R.id.fragmentclientes_DividaGeral);
         tv_SaldoGeral = fragmentView.findViewById(R.id.fragmentclientes_SaldoGeral);
+
         LinearLayout paiDosGerais = (LinearLayout) tv_SaldoGeral.getParent();
         paiDosGerais.setTag("resetSaldo");
         paiDosGerais.setOnLongClickListener(new OnLong_Listener());
+
         btn_AddClient = fragmentView.findViewById(R.id.button_addClients);
         btn_AddClient.setOnClickListener(new btnAddClients_listener(0));
         dlg_AddClient = new Dialog(getContext());
         dialogFatherLayout = (LinearLayout) inflater.inflate(R.layout.dialog_addclient,container, false);
-        //ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         layoutParams.width = DesignByCode.getScreenDimensions(activity).x;
-        //layoutParams.height = DesignByCode.getScreenDimensions(activity).y/4;
         dlg_AddClient.setContentView(dialogFatherLayout, layoutParams);
         dlgbtn_addClient = (Button) dlg_AddClient.findViewById(R.id.dlgButton_addClient);
         dlgbtn_addClient.setOnClickListener(new btnAddClients_listener(1));
@@ -88,6 +118,46 @@ public class ClientesFragment extends Fragment {
         return fragmentView;
 
     }
+    private void filtrarClientes(String digitado) {
+
+        for(Cliente cliente : clientes)
+        {
+            String nome = cliente.nome.toUpperCase(); //maiúsculo tb
+            if(nome.contains(digitado))
+            {
+                cliente.show();
+            }
+            else
+            {
+                cliente.hide();
+            }
+        }
+    }
+    private void initMonthsSpinner() {
+
+        Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
+        String[] months = new String[16];
+        //fill up the spinner with months to be selected from
+        months[0] = "Geral";
+        calendar.add(Calendar.MONTH, -3); //we want to be able to selecte the parcelas from at least  3 months past the current one
+        months[1] = Handler.getMonth(calendar.get(Calendar.MONTH)) + "/" + calendar.get(Calendar.YEAR);
+        calendar.add(Calendar.MONTH, 1);
+        months[2] = Handler.getMonth(calendar.get(Calendar.MONTH)) + "/" + calendar.get(Calendar.YEAR);
+        calendar.add(Calendar.MONTH, 1);
+        months[3] = Handler.getMonth(calendar.get(Calendar.MONTH)) + "/" + calendar.get(Calendar.YEAR);
+        calendar.add(Calendar.MONTH, 1);
+        for(int i=4; i<months.length; i++) {
+            String data = "";
+            int month = calendar.get(Calendar.MONTH);
+            data += Handler.getMonth(month) + "/" + calendar.get(Calendar.YEAR);
+            months[i] = data;
+            calendar.add(Calendar.MONTH, 1);
+        }
+        spn_dividaSpinner.setOnItemSelectedListener(new OnSelectedListener());
+
+        Handler.setSpinnerAdapter_stringArray(activity, months, spn_dividaSpinner, R.layout.spinner_layout);
+    }
+
     public void updateSaldoGeral() {
         SaldoGeral=0;
         for(int i=0; i<clientes.size(); i++)
@@ -99,18 +169,32 @@ public class ClientesFragment extends Fragment {
 
     public void updateDividaGeral()
     {
-        DividaGeral=0;
+       DividaGeral=0;
         for(int i=0; i<clientes.size(); i++)
-        {
-            DividaGeral +=clientes.get(i).divida;
+       {
+           DividaGeral +=clientes.get(i).divida;
         }
         tv_DividaGeral.setText(Handler.formartDoubleToString(DividaGeral, "R$"));
-    }
-    public void decrementDividaGeral(double valor)
+   }
+   public String getMesSelecionado()
+   {
+       return spn_dividaSpinner.getSelectedItem().toString();
+
+   }
+public void updateDividaDoMes()
+{
+
+    double dividaDoMes=0;
+    for(Cliente cliente : clientes)
     {
-        DividaGeral-=valor;
-        tv_DividaGeral.setText(Handler.formartDoubleToString(DividaGeral, "R$"));
+     dividaDoMes+= cliente.getDividaDoMes(getMesSelecionado());
+
     }
+
+    tv_DividaGeral.setText(Handler.formartDoubleToString(dividaDoMes, "R$"));
+}
+
+
     public void incrementSaldoGeral(double valor)
     {
         SaldoGeral+=valor;
@@ -135,7 +219,9 @@ public class ClientesFragment extends Fragment {
     {
         SharedPreferences sharedPreferences = getActivity().getSharedPreferences("savedClients", MODE_PRIVATE);
         String jString = sharedPreferences.getString("jString", null);
-//        Log.d("Json loading", jString);
+
+
+     Log.d("Json loading", jString);
         if(jString !=null)
         {
             JSONObject json = null;
@@ -144,7 +230,8 @@ public class ClientesFragment extends Fragment {
                 json = new JSONObject(jString);
                 jClientesArray = json.getJSONArray("Clientes");
 
-            } catch (JSONException e) {
+            } catch (JSONException e) {;
+
                 e.printStackTrace();
             }
             for (int b = 0; b < jClientesArray.length(); ++b) {
@@ -177,12 +264,24 @@ public class ClientesFragment extends Fragment {
                         cliente.savedProducts.add(product);
                         //  Log.d("produto", productObject.toString());
                     }
-                    JSONObject saldoObject = itemsArray.getJSONObject(1);
-                    JSONObject pagoAcumuladoObject = itemsArray.getJSONObject(2);
+                    JSONObject parcelaObject = itemsArray.getJSONObject(1);
+                    JSONArray parcelasArray = parcelaObject.getJSONArray("Parcelas");
+                    for (int i = 0; i <parcelasArray.length(); i++) {
+                        JSONObject currentlyParcela = parcelasArray.getJSONObject(i);
+                        double valor = currentlyParcela.getDouble("valor");
+                        String data = currentlyParcela.getString("data");
+                        Parcela parcela = new Parcela(activity,data , valor);
+                        cliente.addToSavedParcelas(parcela);
+                    }
+                    //cliente.parcelasDialog = new DialogParcelas(activity, cliente);
+
+                    JSONObject saldoObject = itemsArray.getJSONObject(2);
+                    JSONObject pagoAcumuladoObject = itemsArray.getJSONObject(3);
                     cliente.saldo = saldoObject.getDouble("saldo");
                     cliente.pagoAcumulado = pagoAcumuladoObject.getDouble("pagoAcumulado");
                     cliente.updateDividaTotal(cliente.getTotalPrice_fromLoadedProducts() - cliente.pagoAcumulado);
-                    //cliente.loadProducts();
+
+
 
 
                 } catch (JSONException e) {
@@ -190,8 +289,8 @@ public class ClientesFragment extends Fragment {
                 }
             }
         }
-        //watch out for these 2 methods for the moment, it may delay too much the initialization of the application
-        updateDividaGeral();
+
+
         updateSaldoGeral();
         //
     }
@@ -221,6 +320,19 @@ public class ClientesFragment extends Fragment {
                     jsonProduct.put("unitPrice", currentlyProduct.unitPrice);
                     jsonProductArray.put(jsonProduct);
                 }
+                //saved parcelas
+                ArrayList<Parcela> parcelas = cliente.parcelasReference;
+                JSONArray jsonParcelasArray = new JSONArray();
+                if(parcelas !=null)
+                {
+                    for (int j = 0; j <parcelas.size(); j++) {
+                        Parcela parcela = parcelas.get(j);
+                        JSONObject jsonParcela = new JSONObject();
+                        jsonParcela.put("valor", parcela.valorDaParcela);
+                        jsonParcela.put("data", parcela.data);
+                        jsonParcelasArray.put(jsonParcela);
+                    }
+                }
 
                 //CLIENTE OBJETO
                 JSONObject clientObj = new JSONObject();
@@ -229,6 +341,11 @@ public class ClientesFragment extends Fragment {
                 JSONObject produtoObject = new JSONObject();
                 produtoObject.put("Produtos", jsonProductArray);
                 arrayOfItems.put(produtoObject);
+                //PARCELAS OBJETO
+                JSONObject parcelaObject = new JSONObject();
+                parcelaObject.put("Parcelas", jsonParcelasArray);
+                arrayOfItems.put(parcelaObject);
+
                 //SALDO OBJETO
                 JSONObject saldoObject = new JSONObject();
                 saldoObject.put("saldo", cliente.saldo);
@@ -251,7 +368,6 @@ public class ClientesFragment extends Fragment {
                 Log.d("jString in save", jString);
                 editor.putString("jString", jString);
                 editor.apply();
-                //Log.d("json", jString);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -259,6 +375,17 @@ public class ClientesFragment extends Fragment {
 
 
 
+    }
+
+    public void updateDivida() {
+        if(getMesSelecionado().equals("Geral"))
+        {
+            updateDividaGeral();
+
+        }
+        else {
+            updateDividaDoMes();
+        }
     }
 
     class OnLong_Listener implements View.OnLongClickListener
@@ -276,7 +403,7 @@ public class ClientesFragment extends Fragment {
                         Cliente cliente = (Cliente) v;
                         clientes.remove(cliente);
                         verticalClients.removeView(cliente);
-                        decrementDividaGeral(cliente.divida);
+                        updateDivida();
                         decrementSaldoGeral(cliente.saldo);
                     }
                 });
@@ -337,6 +464,19 @@ public class ClientesFragment extends Fragment {
              {
                  loadClientes();
              }
+
+        }
+    }
+    class OnSelectedListener implements AdapterView.OnItemSelectedListener
+    {
+
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+           updateDivida();
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
 
         }
     }

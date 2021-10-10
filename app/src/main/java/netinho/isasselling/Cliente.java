@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.opengl.Visibility;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,19 +32,21 @@ import netinho.isasselling.Manager.Handler;
 import netinho.isasselling.Manager.MyMath;
 
 public class Cliente extends LinearLayout  implements DialogWithSpinner.DialogListener{
+    ArrayList<Parcela> savedParcelas;
     Set<Produto> savedProducts;
     ArrayList<Produto> loadedProducts;
     double divida;
     double saldo;
     double pagoAcumulado;
     String nome;
-
+    DialogParcelas parcelasDialog;
     TextView clientDebt;
     MainActivity ctx;
     LinearLayout father;
     LayoutInflater inflater;
     LinearLayout.LayoutParams params;
     DialogClienteDetails dialogClienteDetails;
+    ArrayList<Parcela> parcelasReference;
     @SuppressLint("ResourceType")
     public Cliente(MainActivity ctx,String nome)
     {
@@ -52,6 +55,7 @@ public class Cliente extends LinearLayout  implements DialogWithSpinner.DialogLi
         //this.divida = 0.0;
         this.ctx = ctx;
         this.nome=nome;
+        savedParcelas = new ArrayList<>();
         savedProducts = new TreeSet<Produto>();
         loadedProducts = new ArrayList<>();
         //init xml views
@@ -74,10 +78,24 @@ public class Cliente extends LinearLayout  implements DialogWithSpinner.DialogLi
         int textSize = 20;
         int color = Color.BLACK;
         initInterface(color,textSize);
+        parcelasDialog = new DialogParcelas(ctx,this);
+        parcelasDialog.init();
+
+        parcelasDialog.dividaTotal = divida;
         //initDetailsDialog();
 
     }
+    public ArrayList<Parcela> getSavedParcelas()
+    {
+        return savedParcelas;
+    }
+    public void addToSavedParcelas(Parcela parcela)
+    {
+        this.savedParcelas.add(parcela);
+        //to load the parcelas we need to initiate the parcelasDialog
 
+
+    }
     private void initInterface(int textColor, int textSize) {
         //Cliente  ox (interface
         LinearLayout nameCol = (LinearLayout) father.findViewById(R.id.nameCol);
@@ -115,6 +133,7 @@ public class Cliente extends LinearLayout  implements DialogWithSpinner.DialogLi
         {
             dialogClienteDetails.addToBoughtProducts(loadedProducts.get(i));
         }
+        ctx.FragmentAdapter.clients.updateDivida();
     }
 
 public void updateSaldo(double valor)
@@ -123,7 +142,7 @@ public void updateSaldo(double valor)
     saldo+=valor;
     dialogClienteDetails.tv_saldo.setText(String.valueOf(saldo));
     ctx.FragmentAdapter.clients.incrementSaldoGeral(valor);
-    ctx.FragmentAdapter.clients.decrementDividaGeral(valor);
+    ctx.FragmentAdapter.clients.updateDivida();
 
 }
 public void resetSaldo()
@@ -133,22 +152,53 @@ public void resetSaldo()
 }
 public void pagarDivida(double valor)
 {
-    if(valor <= divida) {
+    if(valor > divida) valor = divida;
 
         double newValue = divida - valor;
+        parcelasDialog.pagarParcela(valor);
+        dialogClienteDetails.updateDividaTotal(newValue);
         updateSaldo(valor);
-        if (newValue <= 0) {
-            newValue = 0;
-             dialogClienteDetails.removeBoughtProducts();
+        checarDividaAndRemoveProducts(newValue);
+
+
+}
+
+    public void checarDividaAndRemoveProducts(double dividaZero) {
+        if (dividaZero <= 0) {
+            dividaZero = 0;
+            pagoAcumulado = 0;
+            dialogClienteDetails.removeBoughtProducts();
             //
         }
 
-        dialogClienteDetails.updateDividaTotal(newValue);
-        dialogClienteDetails.parcelasDialog.pagarParcela(valor);
+    }
+
+    public double getDividaDoMes(String data)
+{
+    double dividaDoMes=0;
+if(parcelasReference !=null)
+{
+    for(Parcela  p : parcelasReference )
+    {
+        if(p.data.contains(data)) //the data sent through this method as a argument is in the format MM/YY and the data string of a parcela (p.data) is in the format DD/MM/YY.
+        {
+            //acabos de encontrar uma parcela que vence no mês selecionado
+            dividaDoMes+=p.valorDaParcela;
+        }
 
     }
+
+}
+    return dividaDoMes;
 }
 
+    public void show() {
+        this.setVisibility(VISIBLE);
+    }
+    public void hide()
+    {
+        this.setVisibility(GONE);
+    }
     class thisClickListener implements View.OnClickListener
 {
     //show the dialog with the information of the client and what he has bought

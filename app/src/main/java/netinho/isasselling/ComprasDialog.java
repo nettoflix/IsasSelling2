@@ -27,11 +27,12 @@ public class ComprasDialog extends Dialog {
     TextView m_name;
     Spinner m_quantity;
     Button m_button_addCompra;
+
     public ComprasDialog(@NonNull MainActivity ctx, Cliente cliente) {
         super(ctx);
         this.ctx = ctx;
         this.cliente = cliente;
-        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(400, 600);
+        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(500, 600);
         LinearLayout dialog_addcompra = (LinearLayout) getLayoutInflater().inflate(R.layout.dialog__addcompra,null , false);
         this.setContentView(dialog_addcompra,layoutParams);
         m_name = dialog_addcompra.findViewById(R.id.addcompra_productName);
@@ -48,10 +49,13 @@ public class ComprasDialog extends Dialog {
         Handler.setSpinnerAdapter(ctx, 100, m_quantity);
         String marcas[] ={"Avon","Natura" ,"Oboticário", "Jequiti"};
         Handler.setSpinnerAdapter_stringArray(ctx, marcas, m_marca);
+        //Spinner spinner_Parcela = dialog_addcompra.findViewById(R.id.addcompra_spinnerParcela);
+       // Spinner spinner_Data = dialog_addcompra.findViewById(R.id.addcompra_spinnerData);
+        //String [] dataStrings = Handler.getCalendarFromNowOn(12);
+        //Handler.setSpinnerAdapter_stringArray(ctx, dataStrings, spinner_Parcela);
 
 
     }
-
     public void showDialog()
     {
         this.show();
@@ -85,6 +89,9 @@ public class ComprasDialog extends Dialog {
        // public Produto(Activity ctx, String name, String category,String marca , double unitPrice, int quantity, boolean spin, int marginSpace)
 
       cliente.dialogClienteDetails.addToBoughtProducts(new Produto(ctx, name, category, marca, price,quantity, false, 0 ));
+      if(ctx.FragmentAdapter.clients.getMesSelecionado().equals("Geral")) ctx.FragmentAdapter.clients.updateDividaGeral();
+       // DialogCriarParcela dialog = new DialogCriarParcela(ctx, cliente.parcelasDialog, cliente, price, true);
+       // dialog.show();
       this.dismiss();
     }
 }

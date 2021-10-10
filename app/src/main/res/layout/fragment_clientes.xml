@@ -35,14 +35,14 @@
                         android:id="@+id/textView9"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:text="Dívida"
                         android:textColor="@color/preto"
                         android:textSize="24sp" />
 
                     <Spinner
                         android:id="@+id/fragmentclientes_dividaSpinner"
-                        android:layout_width="match_parent"
+                        android:layout_width="120dp"
+
                         android:layout_height="wrap_content"
                         android:layout_weight="1" />
 
@@ -89,6 +89,16 @@
         style="@style/button_wh"
         android:background="@drawable/button_wh"
         android:text="Add Clientes" />
+
+    <EditText
+        android:id="@+id/fragmentclientes_filtro"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Nome"
+        android:textSize="25sp"
+        android:background="@color/branco"
+        android:inputType="textPersonName" />
 
     <ScrollView
         android:id="@+id/scroll_clients"

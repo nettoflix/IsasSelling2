@@ -119,18 +119,12 @@ public void addToList(ArrayList<Produto> produtos){
     public void addSingleView(Produto product)
 {
     listHeight+=MyMath.converterSpToPixels(40,ctx);
-    String key = product.name;
-    if(!adapterProductsHash.containsKey(key)) {
         listAdapter.count+=1;
         Produto newProduct = new Produto(ctx,product, false);
         newProduct.setPrice(product.quantity*product.unitPrice);
         adapterProducts.add(newProduct);
         adapterProductsHash.put(newProduct.name, newProduct);
         listAdapter.notifyDataSetChanged();
-    }
-    else {
-    //increase quanitity spinner of the bought products
-    }
 
 }
 public double getTotalPrice()

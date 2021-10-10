@@ -41,15 +41,6 @@
             android:text="Personalizado" />
 
         <EditText
-            android:id="@+id/quantidadeBox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ems="10"
-            android:hint="  vezes"
-            android:inputType="number" />
-
-        <EditText
             android:id="@+id/valorBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -57,6 +48,12 @@
             android:ems="10"
             android:hint="  valor"
             android:inputType="number" />
+
+        <Spinner
+            android:id="@+id/spinner_dataPersonalizado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
 
 
     </LinearLayout>
