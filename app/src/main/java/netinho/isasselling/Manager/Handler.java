@@ -1,9 +1,14 @@
 package netinho.isasselling.Manager;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 
 import java.text.DateFormatSymbols;
@@ -136,6 +141,38 @@ public static String[] initParcelasPadrao(int p, double divida) {
         }
         return formated;
     }
-
-
+    public static void sendTextIntent(Activity activity, String text, String destination)
+    {
+        Intent sendIntent = new Intent();
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, text);
+        sendIntent.setType("text/plain");
+        Intent shareIntent = Intent.createChooser(sendIntent, null);
+        sendIntent.setPackage(destination);
+        activity.startActivity(shareIntent);
+    }
+    public static void sendTextIntent(Activity activity, String text)
+    {
+        Intent sendIntent = new Intent();
+        sendIntent.setAction(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, text);
+        sendIntent.setType("text/plain");
+        Intent shareIntent = Intent.createChooser(sendIntent, null);
+        activity.startActivity(shareIntent);
+    }
+    public static  ArrayList<View> getAllChildren(LinearLayout listHolder) {
+        ArrayList<View> list = new ArrayList<>();
+        for (int index = 0; index < ((ViewGroup) listHolder).getChildCount(); index++) {
+            View nextChild = ((ViewGroup) listHolder).getChildAt(index);
+            list.add(nextChild);
+        }
+        return list;
+    }
+    public static <newType, oldType> ArrayList<newType> castArrayList(ArrayList<oldType> list){
+        ArrayList<newType> newlyCastedArrayList = new ArrayList<newType>();
+        for(oldType listObject : list){
+            newlyCastedArrayList.add((newType)listObject);
+        }
+        return newlyCastedArrayList;
+    }
 }

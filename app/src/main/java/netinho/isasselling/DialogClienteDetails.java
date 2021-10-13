@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -31,6 +32,7 @@ public class DialogClienteDetails extends Dialog {
     Button btn_resetar;
     Button btn_addPagamento;
     Button btn_parcelas;
+    LinearLayout sendComprasToWpp;
 
     LinearLayout listHolder;
     TextView tv_dividaTotal;
@@ -69,15 +71,21 @@ public class DialogClienteDetails extends Dialog {
         btn_parcelas.setTag("parcelas");
         btn_parcelas.setOnClickListener(btnListener);
         btn_addCompra = (Button) dialog_client.findViewById(R.id.btn_addCompra);
-        btn_addCompra.setOnClickListener( new Listener_btn_addCompra(cliente));
+        btn_addCompra.setTag("addCompra");
+        btn_addCompra.setOnClickListener( btnListener);
         btn_addPagamento = (Button) dialog_client.findViewById(R.id.btn_addPagamento);
-        btn_addPagamento.setOnClickListener( new Listener_btn_addPagamento());
+        btn_addPagamento.setTag("addPagamento");
+        btn_addPagamento.setOnClickListener(btnListener);
         listHolder = dialog_client.findViewById(R.id.list__productsBought_holder);
+
+        sendComprasToWpp = dialog_client.findViewById(R.id.sendComprasToWpp);
+        sendComprasToWpp.setTag("sendComprasToWpp");
+        sendComprasToWpp.setOnClickListener(btnListener);
 
         //remember its "saldo" that was already loaded
         tv_saldo.setText(Handler.formartDoubleToString(cliente.saldo, "R$"));
 
-        if(cliente.parcelasDialog ==null) cliente.parcelasDialog = new DialogParcelas(ctx,cliente);
+        //if(cliente.parcelasDialog ==null) cliente.parcelasDialog = new DialogParcelas(ctx,cliente);
 
     }
 
@@ -188,19 +196,15 @@ public class DialogClienteDetails extends Dialog {
        if(cliente.parcelasDialog !=null) cliente.parcelasDialog.updateDividaTotal(value);
         cliente.updateDividaTotal(value);
     }
-    class Button_Listener implements View.OnClickListener
-    {
+    class Button_Listener implements View.OnClickListener {
 
         @Override
         public void onClick(View view) {
-            if(view.getTag().equals("listView"))
-            {
+            if (view.getTag().equals("listView")) {
                 CustomView customListView = (CustomView) view;
                 customListView.showHideList();
-            }
-            else if(view.getTag().equals("reset"))
-            {
-                AlertDialog.Builder alertDialog = Handler.setAlertDialog(ctx,"Reset", "Você tem certeza que a dívida foi quitada?");
+            } else if (view.getTag().equals("reset")) {
+                AlertDialog.Builder alertDialog = Handler.setAlertDialog(ctx, "Reset", "Você tem certeza que a dívida foi quitada?");
                 // Specifying a listener allows you to take an action before dismissing the dialog.
                 // The dialog is automatically dismissed when a dialog button is clicked.
                 alertDialog.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
@@ -212,37 +216,38 @@ public class DialogClienteDetails extends Dialog {
                 // A null listener allows the button to dismiss the dialog and take no further action.
                 alertDialog.setNegativeButton(android.R.string.no, null);
                 alertDialog.show();
-            }
-            else if(view.getTag().equals("parcelas"))
-            {
-                if(!cliente.parcelasDialog.dialogIsOn) cliente.parcelasDialog.init();
+            } else if (view.getTag().equals("parcelas")) {
+                if (!cliente.parcelasDialog.dialogIsOn) cliente.parcelasDialog.init();
                 cliente.parcelasDialog.show();
-            }
-
-
-        }
-    } class Listener_btn_addPagamento implements View.OnClickListener {
-        @Override
-        public void onClick(View v) {
-                DialogAddPagamento dlg = new DialogAddPagamento(ctx,cliente);
+            } else if (view.getTag().equals("addPagamento")) {
+                DialogAddPagamento dlg = new DialogAddPagamento(ctx, cliente);
                 dlg.show();
+            } else if (view.getTag().equals("addCompra")) {
+                comprasDialog = null;
+                comprasDialog = new ComprasDialog(ctx, cliente);
+                comprasDialog.showDialog();
+            } else if (view.getTag().equals("sendComprasToWpp")) {
+              sendComprasToWpp();
+            }
         }
     }
-        class Listener_btn_addCompra implements View.OnClickListener
+    private void sendComprasToWpp()
     {
-        Cliente cliente;
-        public  Listener_btn_addCompra(Cliente cliente)
-        {
-            this.cliente = cliente;
+        //pegar todas as CustomViews, que são as listas das categorias (Avon, natura etc), para entao delas pegar os produtos
+        ArrayList<CustomView> categorias = Handler.castArrayList(Handler.getAllChildren(listHolder));
+        String textoToSend = "Olá, " + cliente.nome + ", esses foram os produtos que você comprou comigo:" + "\n\n";
+        for (int i = 0; i < categorias.size(); i++) {
+            CustomView categoria = categorias.get(i);
+            textoToSend += '*' + categoria.category.toUpperCase() + "*" + ':' + '\n'; //"CATEGORIA: newLine"
+            for (Produto produto : categoria.adapterProducts) {
+                textoToSend += produto.name + " " + Handler.formartDoubleToString(produto.price, "R$") + '\n';
+            }
+            textoToSend += '\n';
+            //Log.d("CATEGORIA: ",categorias.get(i).category);
         }
-        //shows the dialog with the products from stock, what he can buy
-        @Override
-        public void onClick(View view) {
-            comprasDialog = null;
-            comprasDialog = new ComprasDialog(ctx, cliente);
-            comprasDialog.showDialog();
-
-        }
+        textoToSend += '\n';
+        textoToSend += "O total que você tem a pagar é de " + '*' + Handler.formartDoubleToString(vDividaTotal, "R$") + '*';
+        Handler.sendTextIntent(ctx, textoToSend,"com.whatsapp");
     }
     //Listener of a item inside the list of bought products
     class OnProduct_Listener implements AdapterView.OnItemClickListener
